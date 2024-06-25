@@ -32,6 +32,6 @@ export const PostDataEditActivity = (onSuccess: () => void) => useMutation({
     },
     onSuccess: () => {
         onSuccess();
-        showMessageSuccess('data berhasil ditambahkan!');
+        showMessageSuccess('data berhasil diubah!');
     }
 })

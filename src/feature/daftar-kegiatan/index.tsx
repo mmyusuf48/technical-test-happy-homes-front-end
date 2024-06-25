@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import { Button, Typography, Grid, Container, InputBase, Paper, IconButton, Select, MenuItem, SelectChangeEvent, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import FilterUi from '../../ui/modal/filter';
 import SearchIcon from '@mui/icons-material/Search';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import ModalWrapUi from '@/ui/modal/wrap';
@@ -13,22 +12,36 @@ import Form from './form'
 import useActivityStore from '@/store/activityStore';
 import CreateProjectFeature from '@/feature/proyek'
 import { GetDataUserRate } from '../pengaturan/hooks/useGetData';
-import { showMessageError, showMessageWarning } from '@/lib/sweet-alert';
+import { showMessageWarning } from '@/lib/sweet-alert';
 import { GetDataKegiatan } from './hooks/useGetData';
 import { CalculateDuration } from '@/helper/calculate-duration';
 import { CalculateTotalWorkingHours } from '@/helper/calculate-total-working-hours';
 import { CalculateEarnings } from '@/helper/calculate-earnings';
 import { useDeleteKegiatan } from './hooks/useDeleteData';
+import FilterListOutlinedIcon from '@mui/icons-material/FilterListOutlined';
+import FilterFeature from './filter';
+import { kegiatanData } from './types';
 
 export default function DaftarKegiatan() {
 
   const { handleOpenModalProyek, isOpenModalProyek } = useActivityStore()
   const [openForm, setOpenForm] = useState(false);
+  const [openUpdateForm, setOpenUpdateForm] = useState(false);
+  const [openFilter, setOpenFilter] = useState(false);
+  const [userRate, setUserRate] = useState<string>('');
   const deleteMutation = useDeleteKegiatan();
+  const [selectedKegiatan, setSelectedKegiatan] = useState<kegiatanData | null>(null);
+  const handleUpdateClick = (kegiatan: kegiatanData) => {
+    setSelectedKegiatan(kegiatan);
+    setOpenUpdateForm(true);
+  };
+  
+  useEffect(() => {
+    selectedKegiatan
+  }, [selectedKegiatan]);
 
   const { data: listUserRate, isLoading } = GetDataUserRate();
 
-  const [userRate, setUserRate] = useState<string>('');
 
   const handleUserRateChange = (event: SelectChangeEvent) => {
     setUserRate(event.target.value as string);
@@ -70,15 +83,22 @@ export default function DaftarKegiatan() {
   return (
     <Box sx={{ bgcolor: "#fff", margin: "20px 0 20px 0", borderRadius: "10px" }}>
       <ModalWrapUi open={openForm && !isOpenModalProyek} handleOpen={setOpenForm}>
-        {/* <Form
-          handleOpen={setOpenForm}
-          userRateId={userRate}
-          dataEdit={{
-            id: '3783807d-840a-46b6-82d4-b4f4b9e01a41'
-          }}
-        /> */}
         <Form
           handleOpen={setOpenForm}
+          userRateId={userRate}
+        />
+      </ModalWrapUi>
+      <ModalWrapUi open={openUpdateForm && !isOpenModalProyek} handleOpen={setOpenUpdateForm}>
+        <Form
+          handleOpen={setOpenUpdateForm}
+          userRateId={userRate}
+          edit={true}
+          kegiatan={selectedKegiatan || undefined}
+        />
+      </ModalWrapUi>
+      <ModalWrapUi open={openFilter && !isOpenModalProyek} handleOpen={setOpenFilter}>
+        <FilterFeature
+          handleOpen={setOpenFilter}
           userRateId={userRate}
         />
       </ModalWrapUi>
@@ -86,7 +106,7 @@ export default function DaftarKegiatan() {
       <ModalWrapUi open={!!isOpenModalProyek} handleOpen={() => handleOpenModalProyek(false)}>
         <CreateProjectFeature handleOpen={() => handleOpenModalProyek(false)} />
       </ModalWrapUi>
-      <Box sx={{ padding: '16px', borderBottom: '2px #F7F8FB solid', marginBottom: '10px' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' , padding: '16px', borderBottom: '2px #F7F8FB solid', marginBottom: '10px' }}>
         <Grid container spacing={2}>
           <Grid item xs={2}>
             <Typography variant="body2" color="textSecondary">
@@ -116,6 +136,14 @@ export default function DaftarKegiatan() {
             )}
           </Grid>
         </Grid>
+        <Box sx={{ display: 'flex', gap: '5px' }}>
+          <Button onClick={() => alert('coba')} variant='contained' color='error'>
+            Export
+          </Button>
+          <Button onClick={() => alert('coba')} variant='contained' color='success'>
+            Import
+          </Button>
+        </Box>
       </Box>
       <Container maxWidth="xl">
         <Box sx={{ display: 'flex', justifyContent: 'space-between', margin: '15px 0', alignItems: 'center' }}>
@@ -147,7 +175,15 @@ export default function DaftarKegiatan() {
                 placeholder="Search ...."
               />
             </Paper>
-            <FilterUi />
+            <Button onClick={() => {
+              if (userRate) {
+                setOpenFilter(true);
+              } else {
+                showMessageWarning('silahkan pilih user terlebih dahulu');
+              }
+            }}>
+              <FilterListOutlinedIcon />
+            </Button>
           </Box>
         </Box>
         <TableContainer component={Paper} sx={{ marginBottom: '10px' }}>
@@ -176,9 +212,12 @@ export default function DaftarKegiatan() {
                     <TableCell align="center">{kegiatan.end_time}</TableCell>
                     <TableCell align="center">{kegiatan.duration}</TableCell>
                     <TableCell align="center">
-                    <Button onClick={() => handleDelete(kegiatan.id)} sx={{ color: 'red' }}>
-                      <DeleteIcon />
-                    </Button>
+                      <Button onClick={() => handleUpdateClick(kegiatan)} sx={{ color: 'yellow' }}>
+                        <EditIcon />
+                      </Button>
+                      <Button onClick={() => handleDelete(kegiatan.id)} sx={{ color: 'red' }}>
+                        <DeleteIcon />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

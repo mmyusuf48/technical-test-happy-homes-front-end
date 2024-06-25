@@ -1,11 +1,9 @@
 
-interface Kegiatan {
-    id: number;
-    start_time: string;
-    end_time: string;
-  }
+
+
+  import { kegiatanData } from "@/feature/daftar-kegiatan/types";
   
-  export const CalculateTotalWorkingHours = (kegiatans: Kegiatan[]): string => {
+  export const CalculateTotalWorkingHours = (kegiatans: kegiatanData[]): string => {
     let totalJam = 0;
     let totalMenit = 0;
     let totalDetik = 0;

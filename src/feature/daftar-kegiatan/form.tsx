@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box, Button, Typography, IconButton, Grid, TextField, Select, MenuItem, SelectChangeEvent, Link } from '@mui/material';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import useActivityStore from '@/store/activityStore';
 import { GetDataProyek } from '@/feature/proyek/hooks/useGetData';
-import { PostDataActivity } from './hooks/usePostDate';
+import { PostDataActivity, PostDataEditActivity } from './hooks/usePostDate';
+import { kegiatanData } from './types';
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -21,10 +22,11 @@ const style = {
 interface Props {
     handleOpen: (value: boolean) => void,
     userRateId: string,
-    id?: string
+    edit?: boolean,
+    kegiatan?: kegiatanData
 }
 
-const Form = ({ handleOpen, userRateId, id }: Props) => {
+const Form = ({ handleOpen, userRateId, edit, kegiatan  }: Props) => {
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
     const [startTime, setStartTime] = useState<string>('');
@@ -47,8 +49,21 @@ const Form = ({ handleOpen, userRateId, id }: Props) => {
         setProject('');
     };
     
-    const { mutate } = PostDataActivity(handleSuccessAndClose);
+    const { mutate: mutateCreate  } = PostDataActivity(handleSuccessAndClose);
+    const { mutate: mutateEdit  } = PostDataEditActivity(handleSuccessAndClose);
+
     const { data : listProyek, isLoading } = GetDataProyek();
+
+    useEffect(() => {
+        if (edit && kegiatan) {
+            setStartDate(new Date(kegiatan.start_date));
+            setEndDate(new Date(kegiatan.end_date));
+            setStartTime(kegiatan.start_time);
+            setEndTime(kegiatan.end_time);
+            setActivityTitle(kegiatan.activity);
+            setProject(kegiatan.project_id);
+        }
+    }, [edit, kegiatan]);
 
     const formatDate = (date: Date | null) => {
         if (!date) return '';
@@ -89,7 +104,7 @@ const Form = ({ handleOpen, userRateId, id }: Props) => {
             return;
         }
 
-        mutate({ 
+        const dataToSubmit = { 
             start_date: formatDate(startDate),
             end_date: formatDate(endDate),
             start_time: startTime,
@@ -97,7 +112,23 @@ const Form = ({ handleOpen, userRateId, id }: Props) => {
             activity: activityTitle,
             project_id: project,
             user_rate_id: userRateId
-        });
+        };
+        
+        if (edit && kegiatan){
+            const dataToSave = { 
+                id: kegiatan.id,
+                start_date: formatDate(startDate),
+                end_date: formatDate(endDate),
+                start_time: startTime,
+                end_time: endTime,
+                activity: activityTitle,
+                project_id: project,
+                user_rate_id: userRateId
+            };
+            mutateEdit(dataToSave);
+        }else{
+            mutateCreate(dataToSubmit);
+        }
 
     };
     
@@ -129,64 +160,69 @@ const Form = ({ handleOpen, userRateId, id }: Props) => {
                         <Grid item xs={3}>
                             <Typography color="initial" mb={1}>Tanggal Berakhir <span style={{ color: 'red' }}>*</span></Typography>
                             <TextField
-                                id="date"
-                                type='date'
-                                size="small"
-                                value={endDate ? endDate.toISOString().split('T')[0] : ''}
-                                onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
-                                error={!!errors.endDate}
-                                helperText={errors.endDate}
+                                 id="end-date"
+                                 type='date'
+                                 size="small"
+                                 value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                                 onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
+                                 error={!!errors.endDate}
+                                 helperText={errors.endDate}
+                                 fullWidth
+                                 required
                             />
                         </Grid>
                         <Grid item xs={3}>
                             <Typography color="initial" mb={1}>Jam mulai <span style={{ color: 'red' }}>*</span></Typography>
                             <TextField
-                                id="date"
+                                id="start-time"
                                 type='time'
                                 size="small"
-                                fullWidth
                                 value={startTime}
                                 onChange={(e) => setStartTime(e.target.value)}
                                 error={!!errors.startTime}
                                 helperText={errors.startTime}
+                                fullWidth
+                                required
                             />
                         </Grid>
                         <Grid item xs={3}>
                             <Typography color="initial" mb={1}>Jam Berakhir <span style={{ color: 'red' }}>*</span></Typography>
                             <TextField
-                                id="date"
+                                id="end-time"
                                 type='time'
                                 size="small"
-                                fullWidth
                                 value={endTime}
                                 onChange={(e) => setEndTime(e.target.value)}
                                 error={!!errors.endTime}
                                 helperText={errors.endTime}
+                                fullWidth
+                                required
                             />
                         </Grid>
                         <Grid item xs={12}>
                             <Typography color="initial" mb={1}>Judul Kegiatan <span style={{ color: 'red' }}>*</span></Typography>
                             <TextField
-                                id="text"
+                                id="activity-title"
                                 type='text'
                                 size="small"
-                                fullWidth
                                 value={activityTitle}
                                 onChange={(e) => setActivityTitle(e.target.value)}
                                 error={!!errors.activityTitle}
                                 helperText={errors.activityTitle}
+                                fullWidth
+                                required
                             />
                         </Grid>
                             <Grid item xs={12}>
                                 <Typography color="initial" mb={1}>Nama Proyek <span style={{ color: 'red' }}>*</span></Typography>
                                 <Select
-                                    labelId="project-select-label"
                                     id="project-select"
                                     value={project}
                                     onChange={handleProjectChange}
                                     fullWidth
                                     size="small"
                                     error={!!errors.project}
+                                    required
                                 >
                                     <MenuItem onClick={() => handleOpenModalProyek(true)} sx={{ borderBottom: "2px solid #F7F8FB", color: 'red' }}>
                                         <AddCircleOutlineOutlinedIcon />

@@ -39,12 +39,9 @@ const postEditKegiatan = async (
         user_rate_id: string, 
     }
 ) => new Promise((resolve, reject) => {
-    let payloadUpdate = {...payloads};
-
-    if (payloads.id) delete payloadUpdate.id;
 
     AxiosInstance
-        .put(`/cms/activity/${payloads.id}`, { ...payloadUpdate })
+        .put(`/cms/activity/${payloads.id}`, { ...payloads })
         .then((response) => {
             resolve(response.data);
         })
@@ -66,7 +63,7 @@ const getKegiatan = async (id: string) => new Promise<kegiatanData[]>((resolve, 
 
 const deleteKegiatan = async (id: string) => new Promise((resolve, reject) => {
     AxiosInstance
-        .delete(`/cms/activity/:${id}`)
+        .delete(`/cms/activity/${id}`)
         .then((response) => {
             resolve(response.data.data);
         })
